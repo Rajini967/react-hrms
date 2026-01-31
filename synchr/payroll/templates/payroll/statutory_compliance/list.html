@@ -1,0 +1,181 @@
+{% extends 'index.html' %} 
+{% block content %} 
+{% load i18n %}
+{% load static %}
+<style>
+    .oh-sticky-table__right {
+        position: sticky;
+        right: 0;
+        background-color: #fff;
+    }
+
+    .oh-sticky-table__top {
+        z-index: 12 !important;
+        top: 0;
+    }
+</style>
+<section class="oh-wrapper oh-main__topbar" x-data="{searchShow: false}">
+    <div class="oh-main__titlebar oh-main__titlebar--left">
+        <h1 class="oh-main__titlebar-title fw-bold">{% trans "Statutory Compliance" %}</h1>
+        <a class="oh-main__titlebar-search-toggle" role="button" aria-label="Toggle Search"
+            @click="searchShow = !searchShow">
+            <ion-icon name="search-outline" class="oh-main__titlebar-serach-icon md hydrated" role="img"
+                aria-label="search outline"></ion-icon>
+        </a>
+    </div>
+    <form hx-get='{% url "filter-statutory-compliance" %}' id="filterForm" hx-swap="innerHTML"
+        hx-target="#payroll-statutory-compliance-container">
+        <div class="oh-main__titlebar oh-main__titlebar--right">
+            {% if statutory_compliances %}
+                <div class="oh-input-group oh-input__search-group"
+                    :class="searchShow ? 'oh-input__search-group--show' : ''">
+                    <ion-icon name="search-outline" class="oh-input-group__icon oh-input-group__icon--left"></ion-icon>
+                    <input type="text" class="oh-input oh-input__icon" aria-label="Search Input" id="filter-statutory-compliance"
+                        name="search" placeholder="{% trans 'Search' %}" onkeyup="$('.filterButton')[0].click();" />
+                </div>
+            {% endif %}
+            <div class="oh-main__titlebar-button-container">
+                {% if statutory_compliances %}
+                    <ul class="oh-view-types">
+                        <li class="oh-view-type statutory-compliance-view-type" data-view="list">
+                            <a class="oh-btn oh-btn--view {% if request.GET.view == 'list' %} oh-btn--view-active {% endif %}"
+                                title='{% trans "List" %}'
+                                onclick="$('[name=view]').val('list');$('.filterButton')[0].click();">
+                                <ion-icon name="list-outline" role="img" class="md hydrated"
+                                    aria-label="list outline"></ion-icon>
+                            </a>
+                        </li>
+                        <li class="oh-view-type statutory-compliance-view-type" data-view="card">
+                            <a class="oh-btn oh-btn--view {% if request.GET.view != 'list' %} oh-btn--view-active {% endif %}"
+                                title='{% trans "Card" %}'
+                                onclick="$('[name=view]').val('card');$('.filterButton')[0].click();">
+                                <ion-icon name="grid-outline" role="img" class="md hydrated"
+                                    aria-label="grid outline"></ion-icon>
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="oh-dropdown" x-data="{open: false}">
+                        <button class="oh-btn ml-2" @click="open = !open">
+                            <ion-icon name="filter" class="mr-1"></ion-icon>{% trans "Filter" %}
+                            <div id="filterCount"></div>
+                        </button>
+                        <div class="oh-dropdown__menu oh-dropdown__menu--right oh-dropdown__filter p-4" x-show="open" @click.outside="open = false">
+                            {% include 'payroll/statutory_compliance/filter_statutory_compliance.html' %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.payroll.add_statutorycompliance %}
+                    <div class="oh-btn-group ml-2">
+                        <div>
+                            <a class="oh-btn oh-btn--secondary oh-btn--shadow" href="{% url 'statutory-compliance-create' %}">
+                                <ion-icon class="md hydrated" name="add-outline" role="img"
+                                    aria-label="add outline"></ion-icon>
+                                {% trans "Create" %}
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</section>
+<div id="filterTagContainerSectionNav" class="oh-titlebar-container__filters mb-2 mt-0 oh-wrapper"></div>
+<div class="oh-wrapper">
+    <!-- start of Quick filters  -->
+    {% if statutory_compliances %}
+        <div class="d-flex flex-row-reverse mb-2">
+            <span class="me-3" style="cursor: pointer"
+                onclick="$('[name=pf_number]').val('true');$('.filterButton').click()">
+                <span class="oh-dot oh-dot--small me-1" style="background-color: #007bff"></span>
+                {% trans "PF Number" %}
+            </span>
+            <span class="me-3" style="cursor: pointer"
+                onclick="$('[name=esi_number]').val('true');$('.filterButton').click()">
+                <span class="oh-dot oh-dot--small me-1" style="background-color: #ffc107"></span>
+                {% trans "ESI Number" %}
+            </span>
+            <span class="me-3" style="cursor: pointer"
+                onclick="$('[name=pt_number]').val('true');$('.filterButton').click()">
+                <span class="oh-dot oh-dot--small me-1" style="background-color: #dc3545"></span>
+                {% trans "PT Number" %}
+            </span>
+            <span class="me-3" style="cursor: pointer"
+                onclick="$('[name=lwf_number]').val('true');$('.filterButton').click()">
+                <span class="oh-dot oh-dot--small me-1" style="background-color: #6f42c1"></span>
+                {% trans "LWF Number" %}
+            </span>
+        </div>
+    {% endif %}
+    <!-- end of quick filters  -->
+    <div id="payroll-statutory-compliance-container">
+        {% if statutory_compliances %}
+            {% if request.GET.view == 'list' %}
+                {% include 'payroll/statutory_compliance/statutory_compliance_list.html' %}
+            {% else %}
+                {% include 'payroll/statutory_compliance/statutory_compliance_cards.html' %}
+            {% endif %}
+        {% else %}
+            <div class="oh-empty">
+                <h1 class="oh-empty__title">{% trans "No Records found." %}</h1>
+                <p class="oh-empty__subtitle">{% trans "There are currently no statutory compliance records to consider." %}</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $(".statutory-compliance-view-type").click(function (e) {
+            e.preventDefault();
+            var view = $(this).attr("data-view");
+            $("#filter-statutory-compliance").attr("hx-vals", `{"view":"${view}"}`);
+            $("#filterView").val(view);
+            var currentURL = window.location.href;
+            if (/\?view=[^&]+/.test(currentURL)) {
+                newURL = currentURL.replace(/\?view=[^&]+/, "?view=" + view);
+            } else {
+                var separator = currentURL.includes("?") ? "&" : "?";
+                newURL = currentURL + separator + "view=" + view;
+            }
+            history.pushState({}, "", newURL);
+            $(".oh-btn--view-active").removeClass("oh-btn--view-active");
+            $(this).children("a").addClass("oh-btn--view-active");
+        });
+        $("#filter-statutory-compliance").focusout(function (e) {
+            $("#filterSearch").val($(this).val());
+            const formData = $("#filterForm").serializeArray();
+            const jsonObject = {};
+
+            $.each(formData, function () {
+                jsonObject[this.name] = this.value;
+            });
+            delete jsonObject.view;
+            var hxVals = JSON.stringify(jsonObject);
+            $(".statutory-compliance-view-type a").attr("hx-vals", hxVals);
+        });
+
+        $("#filter-statutory-compliance").keyup(function (e) {
+            const formData = $("#filterForm").serializeArray();
+            const jsonObject = {};
+
+            $.each(formData, function () {
+                jsonObject[this.name] = this.value;
+            });
+            delete jsonObject.search;
+            var hxVals = JSON.stringify(jsonObject);
+            $(this).attr("hx-vals", hxVals);
+        });
+        $("#filterSubmit").click(function (e) {
+            const formData = $("#filterForm").serializeArray();
+            const jsonObject = {};
+
+            $.each(formData, function () {
+                jsonObject[this.name] = this.value;
+            });
+            delete jsonObject.view;
+            var hxVals = JSON.stringify(jsonObject);
+            $(".statutory-compliance-view-type").attr("hx-vals", hxVals);
+        });
+    });
+</script>
+{% endblock content %}
